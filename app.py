@@ -70,6 +70,7 @@ class Window(QMainWindow):
 
     def createtoolBar(self):
         pass
+
     # GUI
     def initUI(self):
         wid = QWidget(self)
@@ -94,4 +95,10 @@ class Window(QMainWindow):
         pass
 
     def exit(self):
-        sys.exit()
+        exitDlg = QMessageBox.critical(self, 
+        "Exit the application",
+        "Are you sure you want to exit the application?",
+        buttons=QMessageBox.Yes | QMessageBox.No,
+        defaultButton=QMessageBox.No)
+        if exitDlg == QMessageBox.Yes:
+            sys.exit()
