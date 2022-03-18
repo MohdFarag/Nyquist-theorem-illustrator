@@ -33,7 +33,7 @@ class Window(QMainWindow):
 
         # UI contents
         self.createMenuBar()
-        self.createtoolBar()
+        #self.createtoolBar()
         self.initUI()
         
         # Status Bar
@@ -73,8 +73,8 @@ class Window(QMainWindow):
 
     # GUI
     def initUI(self):
-        wid = QWidget(self)
-        self.setCentralWidget(wid)
+        centralMainWindow = QWidget(self)
+        self.setCentralWidget(centralMainWindow)
         # setting configuration options
         pg.setConfigOptions(antialias=True)
 
@@ -82,20 +82,81 @@ class Window(QMainWindow):
         outerLayout = QVBoxLayout()
 
         ######### INIT GUI #########
-
+        # Initialize tab screen
+        tabs = QTabWidget()
         
+        self.samplingTab = QWidget()
+        self.composerTab = QWidget()
 
-
-        # outerLayout.addWidget()
+        self.samplingLayout()
+        self.composerLayout()
+        
+        # Add tabs
+        tabs.addTab(self.samplingTab,"Sampling")
+        tabs.addTab(self.composerTab,"Composer")
+        
+        outerLayout.addWidget(tabs)
         ######### INIT GUI #########
 
-        wid.setLayout(outerLayout)
+        centralMainWindow.setLayout(outerLayout)
 
-    def browseSignal(self):
+    # Sampling
+    def samplingLayout(self):
+        pass
+    
+    # Composer
+    def composerLayout(self):
+        composerLayout = QVBoxLayout()
+        
+        sinusoidalLayout = QHBoxLayout()
+        
+        controlPanelSinusoidal = QVBoxLayout()
+        freqBox = QLineEdit(self)
+        freqBox.setStyleSheet("font-size:14px; border-radius: 6px;border: 1px solid rgba(27, 31, 35, 0.15);padding: 5px 15px;")
+        freqBox.setPlaceholderText("Frequency")
+
+        magnitudeBox = QLineEdit(self)
+        magnitudeBox.setStyleSheet("font-size:14px; border-radius: 6px;border: 1px solid rgba(27, 31, 35, 0.15);padding: 5px 15px;")
+        magnitudeBox.setPlaceholderText("Magnitude")
+
+        phaseBox = QLineEdit(self)
+        phaseBox.setStyleSheet("font-size:14px; border-radius: 6px;border: 1px solid rgba(27, 31, 35, 0.15);padding: 5px 15px;")
+        phaseBox.setPlaceholderText("Phase")
+
+        plotButton = QPushButton("Plot")
+        plotButton.setStyleSheet("font-size:14px; border-radius: 6px;border: 1px solid rgba(27, 31, 35, 0.15);padding: 5px 15px; background: black; color: #fff")
+        #plotButton.setIcon(QIcon("images/plot.svg"))
+        #plotButton.clicked.connect(plot)
+
+
+        controlPanelSinusoidal.addWidget(freqBox)
+        controlPanelSinusoidal.addWidget(magnitudeBox)
+        controlPanelSinusoidal.addWidget(phaseBox)
+        controlPanelSinusoidal.addWidget(plotButton)
+        
+        # Sinusoidal plot
+        Sinusoidalplot = Plot("Sinusoidal Plot")
+
+        sinusoidalLayout.addLayout(controlPanelSinusoidal)
+        sinusoidalLayout.addWidget(Sinusoidalplot)
+
+        summitionLayout = QHBoxLayout()
+
+        summitionPlot = Plot("Sinusoidal Plot")
+
+        summitionLayout.addWidget(summitionPlot)
+
+        composerLayout.addLayout(sinusoidalLayout)
+        composerLayout.addLayout(summitionLayout)
+
+        self.composerTab.setLayout(composerLayout)
+
+    # Browse signal
+    def browseSignal():
         pass
 
     def exit(self):
-        exitDlg = QMessageBox.critical(self, 
+        exitDlg = QMessageBox.critical(self,
         "Exit the application",
         "Are you sure you want to exit the application?",
         buttons=QMessageBox.Yes | QMessageBox.No,
