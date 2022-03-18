@@ -1,0 +1,7 @@
+# Definition of Main Color Palette
+global COLOR1, COLOR2, COLOR3, COLOR4, COLOR5
+COLOR1 = "#222831"
+COLOR2 = "#393E46"
+COLOR3 = "#00ADB5"
+COLOR4 = "#EEEEEE"
+COLOR5 = "#ffffff"

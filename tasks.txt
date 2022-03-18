@@ -1,38 +1,30 @@
-**Task 2 – Sampling-Theory Illustrator**
-Description: An illustrator for the signal recovery that shows the importance and validation of the Nyquist rate.
----------------------------------------------------------------------------------------------------------------------------
-1- Application should allow the user to open a mid-length signal (around 1000 points length) and show it on the main graph.
------------------------------------------------------- 
-2- The user can sample the given/read signal and see the sampled points highlighted on top of the signal.
------------------------------------------------------- 
-3- The user can change the sampling rate via a slider that range from 0 Hz to 3fmax, where fmax is the maximum frequency in the read signal. When changing the sampling frequency, the sampled points are expected to be changed on the graph (ofcourse, the original signal will encounter no change when changing the sample rate).
------------------------------------------------------- 
-4- The app should be able to reconstruct/recover the signal from the sampled points. Note that reconstruction is done little different from what was explained in the lecture. Signal reconstruction is not just a simple interpolation of any type!
------------------------------------------------------- 
-- The user should be able to see the reconstructed signal from the sampled points in two ways:
-5- As a dotted signal on top of the original signal
------------------------------------------------------- 
-6- A new signal in a secondary graph below the main graph.
------------------------------------------------------- 
-7- The user can toggle the visibility of the secondary graph via some UI element (button or menu item) such that when it disappears,
-the main graph should take the whole space of the app window.
------------------------------------------------------- 
-8- Your application should provide the user with a primitive signal composer where s/he can generate basic signals to test and 
-validate on the app. 
------------------------------------------------------- 
-9- Each signal is basically a summation of some sinusoidals and each sinusoidal has a specific frequency, magnitude and phase shift. 
------------------------------------------------------- 
-10- The Signal Composer should show up either on the right side of the window where it can be resized via a splitter against the main illustrator graph OR as a separate tab in the application. 
-------------------------------------------------------
-11- The Composer should have one graph to display the sinusoidal to be generated.
-------------------------------------------------------
-12- The Composer should have a small panel should show beside the graph to control the frequency, magnitude and phase of the sinusoidal. Then, a button to confirm and add this sinusoidal to the summation.
-------------------------------------------------------
-13- One graph to display the sum of the generated sinusoidals. 
-------------------------------------------------------
-14- There should be a combobox or menuitems through which the user can select one of the contributing sinusoidals and remove it via a delete button.
-------------------------------------------------------
-15- When the user is settled on his/her synthetic signal (the one that shows up in the second graph), s/he confirm moving it to the main illustrator graph to start the sampling/recovery process.
-------------------------------------------------------
-16- In your submission, you need to prepare at least 4 testing synthetic signals (generated and saved through your Composer) that address different testing scenarios. One example test case is the one mentioned in the lecture:
-- Summation of 2Hz and 6Hz sinusoidals, You need to provide 3 more samples; 
+Task 2 – Sampling-Theory Illustrator
+------------------------------------------------------------------------------------------------
+
+Mohamed Ahmed Abdullah
+- The user can: 
+    - Sample the given/read signal via a slider that range from 0 Hz to 3fmax 
+    - See the sampled points highlighted on top of the signal.
+----
+Mohamed Bahaa
+- Application should allow the user to open a mid-length signal (around 1000 points length) and show it on the main graph.
+- When the user is settled on his/her synthetic signal (the one that shows up in the second graph), s/he confirm moving it to the main illustrator graph to start the sampling/recovery process.
+----
+Ismail
+- Generate a signal via a composer
+- Add generated signal to the table with each value
+- Add generated signal to the select Box
+- The user can delete one of the contributing sinusoidals.
+
+----
+Abdulrahman
+- The user can toggle the visibility of the secondary graph 
+- When it disappears, the main graph should take the whole space of the app window.
+
+Abdulrahman || Mohamed Ahmed Abdullah
+- The app should be able to reconstruct/recover the signal from the sampled points. 
+The user should be able to see the reconstructed signal from the sampled points in two ways:
+- As a dotted signal on top of the original signal.
+- A new signal in a secondary graph below the main graph.
+
+Link of application: https://github.com/MohdFarag/Nyquist-theorem-illustrator

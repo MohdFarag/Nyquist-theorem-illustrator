@@ -1,16 +1,12 @@
 # !/usr/bin/python
 
-# Definition of Main Color Palette
-global COLOR1, COLOR2, COLOR3, COLOR4
-COLOR1 = "#222831"
-COLOR2 = "#393E46"
-COLOR3 = "#00ADB5"
-COLOR4 = "#EEEEEE"
-
 # importing Qt widgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+
+# Definition of Main Color Palette
+from Defs import COLOR1, COLOR2, COLOR3, COLOR4, COLOR5
 
 # importing numpy and pandas
 import numpy as np
@@ -25,9 +21,11 @@ class Plot(pg.GraphicsLayoutWidget):
         
         """Initializer."""
         super().__init__()
+        self.setStyleSheet(f"border-radius: 6px;")
+
         self.plot = self.addPlot()
 
-        self.plot.setTitle(title, size="20pt")
+        self.plot.setTitle(title, size = "20pt")
         self.plot.setLabel('bottom', 'Time', 's')
         self.plot.showGrid(x=True, y=True)
         

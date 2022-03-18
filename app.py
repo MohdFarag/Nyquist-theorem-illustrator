@@ -1,15 +1,10 @@
 # !/usr/bin/python
 
 # import Plotter.py Class
-from turtle import Pen
-import plotter
 from plotter import Plot
 
 # Definition of Main Color Palette
-COLOR1 = plotter.COLOR1
-COLOR2 = plotter.COLOR2
-COLOR3 = plotter.COLOR3
-COLOR4 = plotter.COLOR4
+from Defs import COLOR1,COLOR2,COLOR3,COLOR4, COLOR5
 
 # importing Qt widgets
 from PyQt5.QtWidgets import *
@@ -26,6 +21,7 @@ import pyqtgraph as pg
 from pyqtgraph.dockarea import *
 
 import sys
+import os
 
 class TableView(QTableWidget):
     def __init__(self,*args):
@@ -53,6 +49,9 @@ class Window(QMainWindow):
         
         """Initializer."""
         super().__init__()
+
+        # Initialize Variables
+        self.mainDataPlot = []
 
         self.setWindowIcon(QIcon('images/icon.png'))
         
@@ -157,7 +156,9 @@ class Window(QMainWindow):
         reconstructType = QComboBox()
         reconstructType.setStyleSheet(f"""font-size:14px;
                                     height: 25px;
-                                    padding: 0px 5px;""")
+                                    padding: 0px 5px;
+                                    background: {COLOR4};
+                                    color:{COLOR1};""")
         reconstructType.addItem("Choose")
         reconstructType.addItem("Secondary graph")
         reconstructType.addItem("Dotted signal")
@@ -220,6 +221,7 @@ class Window(QMainWindow):
         panelGroupBox = QGroupBox("Panel")
         panelSinusoidal = QVBoxLayout()
         panelGroupBox.setLayout(panelSinusoidal)
+        #panelGroupBox.setStyleSheet(f"Background: {COLOR5}")
         
         # Frequency Text Box
         freqBox = QLineEdit(self)
@@ -227,8 +229,8 @@ class Window(QMainWindow):
                             border-radius: 6px;
                             border: 1px solid {COLOR1};
                             padding: 5px 15px; 
-                            background: {COLOR2};
-                            color: {COLOR4};""")
+                            background: {COLOR4};
+                            color: {COLOR1};""")
         freqBox.setPlaceholderText("Frequency")
 
         # Magnitude Text Box
@@ -237,8 +239,8 @@ class Window(QMainWindow):
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px; 
-                                background: {COLOR2};
-                                color: {COLOR4};""")
+                                background: {COLOR4};
+                                color: {COLOR1};""")
         magnitudeBox.setPlaceholderText("Magnitude")
 
         # Phase Text Box
@@ -247,8 +249,8 @@ class Window(QMainWindow):
                             border-radius: 6px;
                             border: 1px solid {COLOR1};
                             padding: 5px 15px; 
-                            background: {COLOR2};
-                            color: {COLOR4};""")
+                            background: {COLOR4};
+                            color: {COLOR1};""")
         phaseBox.setPlaceholderText("Phase")
 
         plotButton = QPushButton("Plot")
@@ -258,8 +260,9 @@ class Window(QMainWindow):
                             padding: 5px 15px; 
                             background: {COLOR1}; 
                             color: {COLOR4};""")
-        # plotButton.setIcon(QIcon("images/plot.svg"))
-        # plotButton.clicked.connect(plot)
+
+        plotButton.setIcon(QIcon("images/plot.svg"))
+        plotButton.clicked.connect(self.plotComposerSignal)
 
         panelSinusoidal.addWidget(freqBox)
         panelSinusoidal.addWidget(magnitudeBox)
@@ -292,7 +295,9 @@ class Window(QMainWindow):
         signalsList = QComboBox()
         signalsList.setStyleSheet(f"""font-size:14px;
                                     height: 25px;
-                                    padding: 0px 5px;""")
+                                    padding: 0px 5px;
+                                    background: {COLOR4};
+                                    color:{COLOR1};""")
         signalsList.addItem("Choose...")
         
         # Delete of signal button 
@@ -329,7 +334,16 @@ class Window(QMainWindow):
         self.composerTab.setLayout(composerLayout)
 
     # Browse signal
-    def browseSignal():
+    def browseSignal(self):
+        path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv);; text(*.txt)")
+        if path == "":
+                return
+        if fileExtension == "csv(*.csv)":
+            self.mainDataPlot = pd.read_csv(path).iloc[:,0]
+            self.mainDataPlot = self.mainDataPlot.values.tolist()
+
+    # Plot Composer Signal
+    def plotComposerSignal(self):
         pass
 
     def exit(self):
