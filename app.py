@@ -128,7 +128,6 @@ class Window(QMainWindow):
         #plotButton.setIcon(QIcon("images/plot.svg"))
         #plotButton.clicked.connect(plot)
 
-
         controlPanelSinusoidal.addWidget(freqBox)
         controlPanelSinusoidal.addWidget(magnitudeBox)
         controlPanelSinusoidal.addWidget(phaseBox)
