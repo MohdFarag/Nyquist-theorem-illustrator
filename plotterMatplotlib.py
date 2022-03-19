@@ -55,20 +55,9 @@ class MplCanvas(FigureCanvasQTAgg):
         self.x = x
         self.sampling = sampling
 
-    def plotContinuousSignal(self, frequency, magnitude, phase):
+    def plotSignal(self):
         self.clearSignal()
-
-        tMin = -np.pi/2
-        tMax = np.pi/2
-        self.t = np.linspace(tMin, tMax, 1000)
-        self.y = magnitude * np.sin(2 * np.pi * frequency * self.x + phase)
         self.axes.plot(self.x, self.y)
-
-    def plotDiscreteSignal(self):
-        self.clearSignal()
-
-        self.axes.plot(self.x, self.y)
-
         self.draw()
 
     def resampleSingal(self, newSample):
@@ -76,13 +65,13 @@ class MplCanvas(FigureCanvasQTAgg):
 
         self.clearSignal()
         
-        f = signal.resample(self.y, newSample)
-        xNew = np.linspace(-np.pi/2, np.pi/2, newSample)
+        f = signal.resample(self.y, self.sampling)
+        xNew = np.linspace(min(self.x), max(self.x), self.sampling)
         
         # Plot Original Signal
         self.axes.plot(self.x, self.y)
         # Plot Sampled Signal
-        self.axes.plot(xNew, f, '.', newSample)
+        self.axes.plot(xNew, f, '.', self.sampling)
 
         self.draw()
 
@@ -90,7 +79,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.clearSignal()
         
         f = signal.resample(self.y, self.sampling)
-        xNew = np.linspace(-np.pi/2, np.pi/2, self.sampling)
+        xNew = np.linspace(min(self.x), max(self.x), self.sampling)
         
         # Plot Sampled Signal
         self.axes.plot(xNew, f, '-', self.sampling)

@@ -29,7 +29,6 @@ from scipy.fft import rfft, fft, fftfreq
 class TableView(QTableWidget):
     def __init__(self,*args):
         QTableWidget.__init__(self, *args)
-        self.data = []	
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
         self.setColumnCount(3)
@@ -39,12 +38,9 @@ class TableView(QTableWidget):
         rowPosition = self.rowCount()
 
         self.insertRow(rowPosition)
-        self.setItem(rowPosition , 0, QTableWidgetItem(f"{frequency} Hz"))
+        self.setItem(rowPosition , 0, QTableWidgetItem(f"{frequency}Hz"))
         self.setItem(rowPosition , 1, QTableWidgetItem(f"{magnitude}"))
-        self.setItem(rowPosition , 2, QTableWidgetItem(f"{phase} °"))
-
-    def getData(self):
-        return self.data 
+        self.setItem(rowPosition , 2, QTableWidgetItem(f"{phase}°"))
 
 class Window(QMainWindow):
     """Main Window."""
@@ -55,7 +51,7 @@ class Window(QMainWindow):
 
         # Initialize Variables
         self.mainDataPlot = []
-        self.signalSummition = [0 for _ in range(0,1000)]
+        self.signalSummition = [0 for i in range(0,1000)]
         self.hidden = False
 
 
@@ -148,18 +144,6 @@ class Window(QMainWindow):
         # Main Plot
         self.mainPlot = MplCanvas("Main Plot")
 
-        ### Will be deleted ###
-        x = np.linspace(-np.pi/2, np.pi/2, 1000)
-        y1 = np.sin(2 * np.pi * 10 * x)
-        y2 = np.sin(2 * np.pi * 1 * x + 90)
-        y3 = np.sin(2 * np.pi * 3 * x + 270)
-        y = y1 + y2 + y3
-
-        self.mainPlot.set_data(y, x)
-        
-        self.mainPlot.plotDiscreteSignal()
-        ### Will be deleted ###
-
         # Main Buttons Layout
         mainButtons = QHBoxLayout()
 
@@ -184,8 +168,8 @@ class Window(QMainWindow):
                                     background: {COLOR4};
                                     color:{COLOR1};""")
         self.reconstructType.addItem("Choose")
-        self.reconstructType.addItem("In Secondary graph")
         self.reconstructType.addItem("Dotted signal")
+        self.reconstructType.addItem("In Secondary graph")
 
         # Sampling Buttons
         plotReconstructButton = QPushButton("Reconstruct")
@@ -200,7 +184,7 @@ class Window(QMainWindow):
         mainButtons.addWidget(self.frequencyStartLabel)
         mainButtons.addWidget(sliderMainPlot)
         mainButtons.addWidget(frequencyEndLabel)
-        mainButtons.addWidget(self.reconstructType)
+        #mainButtons.addWidget(self.reconstructType)
         mainButtons.addWidget(plotReconstructButton)
 
         mainLayout.addWidget(self.mainPlot)
@@ -326,9 +310,6 @@ class Window(QMainWindow):
         # List of signale layout
         listLayout = QHBoxLayout()
         
-        # Delete of signal button 
-        deleteButton = QPushButton()
-
         # Signals List
         self.signalsList = QComboBox()
         self.signalsList.setStyleSheet(f"""font-size:14px;
@@ -345,7 +326,8 @@ class Window(QMainWindow):
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px;""")
-                            
+        deleteButton.clicked.connect(self.deleteSignal)
+
         listLayout.addWidget(self.signalsList,4)
         listLayout.addWidget(deleteButton,1)
 
@@ -355,6 +337,7 @@ class Window(QMainWindow):
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px;
                                 color:{COLOR4}""")
+        confirmButton.clicked.connect(self.signalSummitionPlot)
         
         moveSamplingButton = QPushButton("Moving to Main Illustrator")
         moveSamplingButton.setStyleSheet(f"""background: {COLOR1};
@@ -362,6 +345,7 @@ class Window(QMainWindow):
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px;
                                 color:{COLOR4}""")
+        moveSamplingButton.clicked.connect(self.moveToSamplePlot)
 
         summitionSinusoidal.addWidget(self.signalsTable)
         summitionSinusoidal.addLayout(listLayout)
@@ -369,10 +353,10 @@ class Window(QMainWindow):
         summitionSinusoidal.addWidget(moveSamplingButton)
 
         # Summition Plot  
-        summitionPlot = Plot()
+        self.summitionPlot = Plot()
 
         summitionLayout.addWidget(summitionGroupBox, 3)
-        summitionLayout.addWidget(summitionPlot ,7)
+        summitionLayout.addWidget(self.summitionPlot ,7)
 
         composerLayout.addLayout(sinusoidalLayout)
         composerLayout.addLayout(summitionLayout)
@@ -381,52 +365,98 @@ class Window(QMainWindow):
 
     # Browse signal
     def browseSignal(self):
-        path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(.csv);; text(.txt)")
+        path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv);; text(*.txt)")
         if path == "":
                 return
+                
         if fileExtension == "csv(*.csv)":
             self.mainDataPlot = pd.read_csv(path).iloc[:,0]
             self.mainDataPlot = self.mainDataPlot.values.tolist()
 
-        self.mainplot.clearPlot()
-        self.mainplot.plotDiscreteSignal(self.mainDataPlot)
+        self.mainPlot.clearSignal()
+        self.mainPlot.set_data(self.mainDataPlot, [i for i in range(0,len(self.mainDataPlot))])
+        self.mainPlot.plotSignal()
 
     def reconstructSample(self):
-        if self.reconstructType.currentIndex() == 1:
-            pass
-        elif self.reconstructType.currentIndex() == 2:
-            self.reconstractionPlot.reConstructSingal()
-        else :
-            self.statusBar.showMessage("Choose how you would see the reconstructed signal!")
+        self.reconstractionPlot.reConstructSingal()
 
-    
     # Plot Composer Signal
     def plotSinusoidalSignal(self):
         freq = int(self.freqBox.text())
         magnitude = int(self.magnitudeBox.text())
         phase = int(self.phaseBox.text())
 
-        signal = self.sinusoidalPlot.plotContinuousSignal(freq, magnitude, phase)
+        signal,t = self.getContinuosSignal(freq, magnitude, phase)
+
+        self.sinusoidalPlot.plotSignal(t, signal)
         self.signalsTable.addData(freq, magnitude, phase)
         self.signalsList.addItem("Signal " + str(self.signalsTable.rowCount()))
-        self.signalSummition = np.add(self.signalSummition, signal)
 
-    def connect(self):
-        pass
-    
+    # Signal Summution
+    def signalSummitionPlot(self):
+        i = 0
+        self.signalSummition = [0 for i in range(0,1000)]
+        while i < self.signalsTable.rowCount() :
+            frequency = self.signalsTable.item(i,0).data(0)[:-2]
+            magnitude = self.signalsTable.item(i,1).data(0)
+            phase = self.signalsTable.item(i,2).data(0)[:-1]
+            
+            y,_ = self.getContinuosSignal(frequency, magnitude, phase)
+            i+=1
+            
+            self.signalSummition = np.add(self.signalSummition,y)
+
+        self.summitionPlot.clearPlot()
+        self.summitionPlot.plotSignal(np.linspace(-np.pi/2, np.pi/2, 1000), self.signalSummition)
+
+    # Delete signal from the list
+    def deleteSignal(self):
+        currentIndex = int(self.signalsList.currentIndex()) - 1
+
+        frequency = self.signalsTable.item(int(self.signalsList.currentText()[7])-1,0).data(0)[:-2]
+        magnitude = self.signalsTable.item(int(self.signalsList.currentText()[7])-1,1).data(0)
+        phase = self.signalsTable.item(int(self.signalsList.currentText()[7])-1,2).data(0)[:-1]
+
+        y,_ = self.getContinuosSignal(frequency, magnitude, phase)
+
+        self.signalsTable.removeRow(int(self.signalsList.currentText()[7])-1)        
+        self.signalsList.removeItem(self.signalsList.currentIndex())
+
+        while currentIndex < self.signalsList.count():
+            currentIndex +=1
+            self.signalsList.setItemText(currentIndex,"Signal " + str(currentIndex))
+
+    # Hide secondary Plot        
     def hideSecGraph(self):
         if self.hidden:
             self.reconstructedframe.show()
             self.hidden = False
-            self.statusBar.showMessage("The secondary graph be hidden!")
+            self.statusBar.showMessage("The secondary graph be unhidden!")
             self.hideButton.setIcon(QIcon("images/show.svg"))
         else:
             self.reconstructedframe.hide()
             self.hidden = True
-            self.statusBar.showMessage("The secondary graph be unhidden!")
+            self.statusBar.showMessage("The secondary graph be hidden!")
             self.hideButton.setIcon(QIcon("images/hide.svg"))
 
 
+    def getContinuosSignal(self, frequency, magnitude, phase):
+        tMin = -np.pi/2
+        tMax = np.pi/2
+
+        t = np.linspace(tMin, tMax, 1000)
+        y = int(magnitude) * np.sin(2 * np.pi * int(frequency) * t + int(phase))
+
+        return (y, t)
+
+    def moveToSamplePlot(self):
+        self.mainPlot.clearSignal()
+        self.mainPlot.set_data(self.signalSummition, [i for i in range(0,len(self.signalSummition))])
+        self.mainPlot.plotSignal()
+
+    def connect(self):
+        pass
+    
     def exit(self):
         exitDlg = QMessageBox.critical(self,
         "Exit the application",

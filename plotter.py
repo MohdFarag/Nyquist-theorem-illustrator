@@ -36,23 +36,9 @@ class Plot(pg.GraphicsLayoutWidget):
         self.y = [0]
         self.x = [0]
 
-    def plotContinuousSignal(self, frequency, magnitude, phase):
+    def plotSignal(self, x, y):
         self.clearPlot()
-        
-        tMin = -np.pi/2
-        tMax = np.pi/2
-        
-        t = np.linspace(tMin, tMax, 1000)
-        y = magnitude * np.sin(2 * np.pi * frequency * t + phase)
-        
-        self.plot.plot(t, y)
-
-        return y
-
-    def plotDiscreteSignal(self, y, x):
-        y = self.y
-        x = self.x
-        self.plot.plot(x, y, symbol='o')
+        self.plot.plot(x,y)
 
     def clearPlot(self):
         self.plot.clear()
