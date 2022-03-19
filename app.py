@@ -381,12 +381,15 @@ class Window(QMainWindow):
 
     # Browse signal
     def browseSignal(self):
-        path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv);; text(*.txt)")
+        path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(.csv);; text(.txt)")
         if path == "":
                 return
         if fileExtension == "csv(*.csv)":
             self.mainDataPlot = pd.read_csv(path).iloc[:,0]
             self.mainDataPlot = self.mainDataPlot.values.tolist()
+
+        self.mainplot.clearPlot()
+        self.mainplot.plotDiscreteSignal(self.mainDataPlot)
 
     def reconstructSample(self):
         if self.reconstructType.currentIndex() == 1:
