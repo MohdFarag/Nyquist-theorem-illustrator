@@ -27,24 +27,32 @@ class Plot(pg.GraphicsLayoutWidget):
 
         self.plot.setTitle(title, size = "20pt")
         self.plot.setLabel('bottom', 'Time', 's')
-        self.plot.showGrid(x=True, y=True)
+        #self.plot.showGrid(x=True, y=True)
         
         self.setBackground(f'{COLOR1}')
         self.plot.getAxis('left').setPen(f"{COLOR4}")
         self.plot.getAxis('bottom').setPen(f"{COLOR4}")
 
+        self.y = [0]
+        self.x = [0]
 
     def plotContinuousSignal(self, frequency, magnitude, phase):
+        self.clearPlot()
+        
         tMin = -np.pi/2
         tMax = np.pi/2
+        
         t = np.linspace(tMin, tMax, 1000)
         y = magnitude * np.sin(2 * np.pi * frequency * t + phase)
-        self.plot.plot(t, y)
         
-        return(y)
+        self.plot.plot(t, y)
 
-    def plotDiscreteSignal(self, y, x=np.linspace(-5, 5, 1000)):
-        self.plot.plot(x, y)
+        return y
+
+    def plotDiscreteSignal(self, y, x):
+        y = self.y
+        x = self.x
+        self.plot.plot(x, y, symbol='o')
 
     def clearPlot(self):
         self.plot.clear()
