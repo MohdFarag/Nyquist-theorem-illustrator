@@ -42,6 +42,8 @@ class TableView(QTableWidget):
         self.setItem(rowPosition , 1, QTableWidgetItem(f"{magnitude}"))
         self.setItem(rowPosition , 2, QTableWidgetItem(f"{phase}°"))
 
+    def clearAllData(self):
+        self.setRowCount(0)
 class Window(QMainWindow):
     """Main Window."""
     def __init__(self):
@@ -55,6 +57,21 @@ class Window(QMainWindow):
         self.signalSummition = [0 for _ in range(0,1000)]
         self.hidden = False
         self.maxFreq = 0
+
+        self.bigExamplesList = [[[2 , 1 , 0],
+                                [6 , 1 , 0]],
+                                [[4 , 10 , 0],
+                                [8 , 1 , 90]],
+                                [[1 , 12 , 0],
+                                [2 , 10 , 0],
+                                [7 , 1 , 90],
+                                [10 , 2 , 0]],
+                                [[1 , 1 , 0],
+                                [2 , 1 , 0],
+                                [3 , 5 , 0]],
+                                [[0.5 , 10 , 0],
+                                [6 , 1 , 0],
+                                [10 , 10 , 0]]]
 
         # setting Icon
         self.setWindowIcon(QIcon('images/icon.png'))
@@ -153,11 +170,11 @@ class Window(QMainWindow):
         self.frequencyStartLabel = QLabel("1")
         self.frequencyStartLabel.setStyleSheet("font-size: 13px;padding: 2px;font-weight: 800;")
 
-        sliderMainPlot = QSlider(Qt.Horizontal,self)
-        sliderMainPlot.setMinimum(1)
-        sliderMainPlot.setMouseTracking(False)
-        sliderMainPlot.setSingleStep(50)
-        sliderMainPlot.setMaximum(300)
+        self.sliderMainPlot = QSlider(Qt.Horizontal,self)
+        self.sliderMainPlot.setMinimum(1)
+        self.sliderMainPlot.setMouseTracking(False)
+        self.sliderMainPlot.setSingleStep(50)
+        self.sliderMainPlot.setMaximum(300)
 
         self.frequencyEndLabel = QLabel(u'3 F\u2098\u2090\u2093')
         
@@ -175,20 +192,19 @@ class Window(QMainWindow):
         self.reconstructType.addItem("In Secondary graph")
 
         # Sampling Buttons
-        plotReconstructButton = QPushButton("Reconstruct")
-        plotReconstructButton.setStyleSheet(f"""font-size:14px; 
+        self.plotReconstructButton = QPushButton("Reconstruct")
+        self.plotReconstructButton.setStyleSheet(f"""font-size:14px; 
                             border-radius: 6px;
                             border: 1px solid {COLOR1};
                             padding: 5px 15px; 
                             background: {COLOR1}; 
                             color: {COLOR4};""")
-        plotReconstructButton.clicked.connect(self.reconstructSample)
  
         mainButtons.addWidget(self.frequencyStartLabel)
-        mainButtons.addWidget(sliderMainPlot)
+        mainButtons.addWidget(self.sliderMainPlot)
         mainButtons.addWidget(self.frequencyEndLabel)
         #mainButtons.addWidget(self.reconstructType)
-        mainButtons.addWidget(plotReconstructButton)
+        mainButtons.addWidget(self.plotReconstructButton)
 
         mainLayout.addWidget(self.mainPlot)
         mainLayout.addLayout(mainButtons)
@@ -203,8 +219,6 @@ class Window(QMainWindow):
         tempLayout.addWidget(self.reconstractionPlot)
         self.reconstructedframe.setLayout(tempLayout)       
 
-        sliderMainPlot.valueChanged[int].connect(self.freqChange)
-
         # Reconstruction Buttons
         reconstructButtons = QHBoxLayout()
 
@@ -218,7 +232,6 @@ class Window(QMainWindow):
                             padding: 5px 15px; 
                             background: {COLOR1}; 
                             color: {COLOR4};""")
-        self.hideButton.clicked.connect(self.hideSecGraph)
 
         reconstructButtons.addWidget(self.hideButton)
         reconstructButtons.addSpacerItem((QSpacerItem(30, 10, QSizePolicy.Expanding)))
@@ -282,21 +295,20 @@ class Window(QMainWindow):
                             background: {COLOR4};
                             color: {COLOR1};""")
 
-        plotButton = QPushButton("Plot")
-        plotButton.setStyleSheet(f"""font-size:14px; 
+        self.plotButton = QPushButton("Plot")
+        self.plotButton.setStyleSheet(f"""font-size:14px; 
                             border-radius: 6px;
                             border: 1px solid {COLOR1};
                             padding: 5px 15px; 
                             background: {COLOR1}; 
                             color: {COLOR4};""")
 
-        plotButton.setIcon(QIcon("images/plot.svg"))
-        plotButton.clicked.connect(self.plotSinusoidalSignal)
+        self.plotButton.setIcon(QIcon("images/plot.svg"))
 
         panelSinusoidal.addWidget(self.freqBox)
         panelSinusoidal.addWidget(self.magnitudeBox)
         panelSinusoidal.addWidget(self.phaseBox)
-        panelSinusoidal.addWidget(plotButton)
+        panelSinusoidal.addWidget(self.plotButton)
         
         # Sinusoidal Plot
         self.sinusoidalPlot = Plot()
@@ -327,37 +339,45 @@ class Window(QMainWindow):
         self.signalsList.addItem("Choose...")
         
         # Delete of signal button 
-        deleteButton = QPushButton()
-        deleteButton.setIcon(QIcon("images/clear.svg"))
-        deleteButton.setStyleSheet(f"""background: {COLOR1};
+        self.deleteButton = QPushButton()
+        self.deleteButton.setIcon(QIcon("images/clear.svg"))
+        self.deleteButton.setStyleSheet(f"""background: {COLOR1};
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px;""")
-        deleteButton.clicked.connect(self.deleteSignal)
 
         listLayout.addWidget(self.signalsList,4)
-        listLayout.addWidget(deleteButton,1)
-
-        confirmButton = QPushButton("Sum")
-        confirmButton.setStyleSheet(f"""background: {COLOR1};
-                                border-radius: 6px;
-                                border: 1px solid {COLOR1};
-                                padding: 5px 15px;
-                                color:{COLOR4}""")
-        confirmButton.clicked.connect(self.signalSummitionPlot)
+        listLayout.addWidget(self.deleteButton,1)
         
-        moveSamplingButton = QPushButton("Moving to Main Illustrator")
-        moveSamplingButton.setStyleSheet(f"""background: {COLOR1};
+        self.saveExampleButton = QPushButton("Save")
+        self.saveExampleButton.setStyleSheet(f"""background: {COLOR1};
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px;
                                 color:{COLOR4}""")
-        moveSamplingButton.clicked.connect(self.moveToSamplePlot)
+
+        self.confirmButton = QPushButton("Mix | Plot")
+        self.confirmButton.setStyleSheet(f"""background: {COLOR1};
+                                border-radius: 6px;
+                                border: 1px solid {COLOR1};
+                                padding: 5px 15px;
+                                color:{COLOR4}""")
+        
+        saveAndConfLayout = QHBoxLayout()
+        saveAndConfLayout.addWidget(self.saveExampleButton,2)
+        saveAndConfLayout.addWidget(self.confirmButton,2)
+
+        self.moveSamplingButton = QPushButton("Moving to Main Illustrator")
+        self.moveSamplingButton.setStyleSheet(f"""background: {COLOR1};
+                                border-radius: 6px;
+                                border: 1px solid {COLOR1};
+                                padding: 5px 15px;
+                                color:{COLOR4}""")
 
         summitionSinusoidal.addWidget(self.signalsTable)
         summitionSinusoidal.addLayout(listLayout)
-        summitionSinusoidal.addWidget(confirmButton)
-        summitionSinusoidal.addWidget(moveSamplingButton)
+        summitionSinusoidal.addLayout(saveAndConfLayout)
+        summitionSinusoidal.addWidget(self.moveSamplingButton)
 
         # Summition Plot  
         self.summitionPlot = Plot()
@@ -365,8 +385,36 @@ class Window(QMainWindow):
         summitionLayout.addWidget(summitionGroupBox, 3)
         summitionLayout.addWidget(self.summitionPlot ,7)
 
+        exampleGroupBox = QGroupBox("Examples")
+        exampleLayout = QHBoxLayout()
+        exampleGroupBox.setLayout(exampleLayout)
+
+        self.examplesList = QComboBox()
+        self.examplesList.setStyleSheet(f"""font-size:14px;
+                                    height: 25px;
+                                    padding: 0px 5px;
+                                    background: {COLOR4};
+                                    color:{COLOR1};""")
+        self.examplesList.addItem("Choose...")
+        self.examplesList.addItem("Example 1")
+        self.examplesList.addItem("Example 2")
+        self.examplesList.addItem("Example 3")
+        self.examplesList.addItem("Example 4")
+        self.examplesList.addItem("Example 5")
+
+        self.preview = QPushButton("Preview example")
+        self.preview.setStyleSheet(f"""background: {COLOR1};
+                                border-radius: 6px;
+                                border: 1px solid {COLOR1};
+                                padding: 5px 15px;
+                                color:{COLOR4}""")
+
+        exampleLayout.addWidget(self.examplesList)
+        exampleLayout.addWidget(self.preview)
+
         composerLayout.addLayout(sinusoidalLayout)
         composerLayout.addLayout(summitionLayout)
+        composerLayout.addWidget(exampleGroupBox)
 
         self.composerTab.setLayout(composerLayout)
 
@@ -468,8 +516,60 @@ class Window(QMainWindow):
         self.mainPlot.plotSignal()
     
     def connect(self):
-        pass
+        self.sliderMainPlot.valueChanged[int].connect(self.freqChange)
+        self.hideButton.clicked.connect(self.hideSecGraph)
+
+
+        self.deleteButton.clicked.connect(self.deleteSignal)
+        self.saveExampleButton.clicked.connect(self.AddExample)
+        self.confirmButton.clicked.connect(self.signalSummitionPlot)
+        self.moveSamplingButton.clicked.connect(self.moveToSamplePlot)
+        
+        self.plotButton.clicked.connect(self.plotSinusoidalSignal)
+        self.plotReconstructButton.clicked.connect(self.reconstructSample)
+
+        self.preview.clicked.connect(self.examplesPreview)
+
+    ### Examples Functions
     
+    # Preview loaded example 
+    def examplesPreview(self):
+        exampleIndex = int(self.examplesList.currentText()[-1]) - 1 # compoBox Begin from 1
+        exampleInfo = self.bigExamplesList[exampleIndex]
+
+        self.signalsTable.clearAllData()
+        self.signalsList.clear()
+
+        self.generateExample(exampleInfo)
+
+    def AddExample(self):
+        signalSum = []
+        i = 0
+        while i < self.signalsTable.rowCount() :
+            frequency = self.signalsTable.item(i,0).data(0)[:-2]
+            magnitude = self.signalsTable.item(i,1).data(0)
+            phase = self.signalsTable.item(i,2).data(0)[:-1]
+            
+            signalInfo = [frequency, magnitude, phase]
+            signalSum.append(signalInfo)
+            
+            i+=1
+        
+        self.bigExamplesList.append(signalSum)
+        self.examplesList.addItem("Example " + str(self.examplesList.count()))
+
+    def generateExample(self, exampleInfo) :
+        for signalInfo in exampleInfo:
+            freq = signalInfo[0]
+            magnitude = signalInfo[1]
+            phase = signalInfo[2]
+
+            self.signalsTable.addData(freq, magnitude, phase)
+            self.signalsList.addItem("Signal " + str(self.signalsTable.rowCount()))
+
+            self.signalSummitionPlot()
+
+
     def exit(self):
         exitDlg = QMessageBox.critical(self,
         "Exit the application",
