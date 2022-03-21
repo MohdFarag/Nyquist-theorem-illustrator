@@ -373,7 +373,7 @@ class Window(QMainWindow):
     # Browse signal
     def browseSignal(self, maxFreq):
         self.maxFreq = maxFreq
-        path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv);; text(*.txt)")
+        path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv)")
         if path == "":
                 return
                 
@@ -450,7 +450,7 @@ class Window(QMainWindow):
         tMax = np.pi
 
         t = np.linspace(tMin, tMax, 1000)
-        y = float(magnitude) * np.cos(2 * np.pi * float(frequency) * t + float(phase))
+        y = float(magnitude) * np.sin(2 * np.pi * float(frequency) * t + float(phase))
 
         return (y, t)
 
