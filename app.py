@@ -51,10 +51,12 @@ class Window(QMainWindow):
 
         # Initialize Variables
         self.mainDataPlot = []
-        self.signalSummition = [0 for i in range(0,1000)]
+        self.timePlot = []
+        self.signalSummition = [0 for _ in range(0,1000)]
         self.hidden = False
+        self.maxFreq = 0
 
-
+        # setting Icon
         self.setWindowIcon(QIcon('images/icon.png'))
         
         # setting title
@@ -62,6 +64,7 @@ class Window(QMainWindow):
 
         # UI contents
         self.createMenuBar()
+
         #self.createtoolBar()
         self.initUI()
         
@@ -73,6 +76,8 @@ class Window(QMainWindow):
                                  font-weight:900;""")
         self.statusBar.showMessage("Welcome to our application...")
         self.setStatusBar(self.statusBar)
+
+        self.connect()
 
     # Menu
     def createMenuBar(self):
@@ -86,7 +91,7 @@ class Window(QMainWindow):
         openFile = QAction("Open...",self)
         openFile.setShortcut("Ctrl+o")
         openFile.setStatusTip('Open a new signal')
-        openFile.triggered.connect(self.browseSignal)
+        openFile.triggered.connect(self.getMaxFreq)
 
         fileMenu.addAction(openFile)
 
@@ -99,9 +104,6 @@ class Window(QMainWindow):
 
         # Add file tab to the menu
         menuBar.addMenu(fileMenu)
-
-    def createtoolBar(self):
-        pass
 
     # GUI
     def initUI(self):
@@ -153,12 +155,13 @@ class Window(QMainWindow):
 
         sliderMainPlot = QSlider(Qt.Horizontal,self)
         sliderMainPlot.setMinimum(1)
-        sliderMainPlot.setMaximum(3*1000)
+        sliderMainPlot.setMouseTracking(False)
+        sliderMainPlot.setSingleStep(50)
+        sliderMainPlot.setMaximum(300)
 
-        frequencyEndLabel = QLabel(u'3F\u2098\u2090\u2093')
+        self.frequencyEndLabel = QLabel(u'3 F\u2098\u2090\u2093')
         
-        frequencyEndLabel.setText(frequencyEndLabel.text() + '= 3*500Hz')
-        frequencyEndLabel.setStyleSheet("font-size: 13px;padding: 2px;font-weight: 800;")
+        self.frequencyEndLabel.setStyleSheet("font-size: 13px;padding: 2px;font-weight: 800;")
         
         # Reconstruct signal type : dotted or secondary graph
         self.reconstructType = QComboBox()
@@ -183,14 +186,13 @@ class Window(QMainWindow):
  
         mainButtons.addWidget(self.frequencyStartLabel)
         mainButtons.addWidget(sliderMainPlot)
-        mainButtons.addWidget(frequencyEndLabel)
+        mainButtons.addWidget(self.frequencyEndLabel)
         #mainButtons.addWidget(self.reconstructType)
         mainButtons.addWidget(plotReconstructButton)
 
         mainLayout.addWidget(self.mainPlot)
         mainLayout.addLayout(mainButtons)
 
-        
         # Reconstraction layout
         reconstructionLayout = QVBoxLayout()
         
@@ -229,10 +231,24 @@ class Window(QMainWindow):
 
         self.samplingTab.setLayout(samplingLayout)
     
+    # Frequency change
     def freqChange(self, value):
-            self.frequencyStartLabel.setText(str(value))
-            self.mainPlot.resampleSingal(value)
-            self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, value)
+            sampling_freq = float(value)/100 * float(self.maxFreq)
+
+            # Update values of labels of slider
+            self.frequencyStartLabel.setText(str(round(sampling_freq, 2)) + " Hz")
+            text = str(value/100) + u'F\u2098\u2090\u2093'
+            self.frequencyEndLabel.setText(text)
+
+            # Sample signal
+            sampledTime, sampledSignal = self.mainPlot.sampleSingal(sampling_freq + 1)
+
+            # Update Data in reconstructed Plot
+            self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, sampling_freq + 1, sampledTime, sampledSignal)
+
+    def getMaxFreq(self):
+        freqDialog = popupWindow(self)
+        freqDialog.show()
 
     # Composer Layout Tab
     def composerLayout(self):
@@ -246,34 +262,25 @@ class Window(QMainWindow):
         panelGroupBox.setLayout(panelSinusoidal)
         
         # Frequency Text Box
-        self.freqBox = QLineEdit(self)
+        self.freqBox = QSpinBox(self)
         self.freqBox.setStyleSheet(f"""font-size:14px; 
-                            border-radius: 6px;
-                            border: 1px solid {COLOR1};
                             padding: 5px 15px; 
                             background: {COLOR4};
                             color: {COLOR1};""")
-        self.freqBox.setPlaceholderText("Frequency")
 
         # Magnitude Text Box
-        self.magnitudeBox = QLineEdit(self)
+        self.magnitudeBox = QSpinBox(self)
         self.magnitudeBox.setStyleSheet(f"""font-size:14px; 
-                                border-radius: 6px;
-                                border: 1px solid {COLOR1};
                                 padding: 5px 15px; 
                                 background: {COLOR4};
                                 color: {COLOR1};""")
-        self.magnitudeBox.setPlaceholderText("Magnitude")
 
         # Phase Text Box
-        self.phaseBox = QLineEdit(self)
+        self.phaseBox = QSpinBox(self)
         self.phaseBox.setStyleSheet(f"""font-size:14px; 
-                            border-radius: 6px;
-                            border: 1px solid {COLOR1};
                             padding: 5px 15px; 
                             background: {COLOR4};
                             color: {COLOR1};""")
-        self.phaseBox.setPlaceholderText("Phase")
 
         plotButton = QPushButton("Plot")
         plotButton.setStyleSheet(f"""font-size:14px; 
@@ -331,7 +338,7 @@ class Window(QMainWindow):
         listLayout.addWidget(self.signalsList,4)
         listLayout.addWidget(deleteButton,1)
 
-        confirmButton = QPushButton("Confirm")
+        confirmButton = QPushButton("Sum")
         confirmButton.setStyleSheet(f"""background: {COLOR1};
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
@@ -364,27 +371,30 @@ class Window(QMainWindow):
         self.composerTab.setLayout(composerLayout)
 
     # Browse signal
-    def browseSignal(self):
+    def browseSignal(self, maxFreq):
+        self.maxFreq = maxFreq
         path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv);; text(*.txt)")
         if path == "":
                 return
                 
         if fileExtension == "csv(*.csv)":
-            self.mainDataPlot = pd.read_csv(path).iloc[:,0]
+            self.mainDataPlot = pd.read_csv(path).iloc[:,1]
             self.mainDataPlot = self.mainDataPlot.values.tolist()
+            self.timePlot = pd.read_csv(path).iloc[:,0]
+            self.timePlot = self.timePlot.values.tolist()
 
         self.mainPlot.clearSignal()
-        self.mainPlot.set_data(self.mainDataPlot, [i for i in range(0,len(self.mainDataPlot))])
+        self.mainPlot.set_data(self.mainDataPlot, self.timePlot)
         self.mainPlot.plotSignal()
 
     def reconstructSample(self):
-        self.reconstractionPlot.reConstructSingal()
+        self.reconstractionPlot.resampleSignalLine()
 
     # Plot Composer Signal
     def plotSinusoidalSignal(self):
-        freq = int(self.freqBox.text())
-        magnitude = int(self.magnitudeBox.text())
-        phase = int(self.phaseBox.text())
+        freq = float(self.freqBox.text())
+        magnitude = float(self.magnitudeBox.text())
+        phase = float(self.phaseBox.text())
 
         signal,t = self.getContinuosSignal(freq, magnitude, phase)
 
@@ -394,8 +404,9 @@ class Window(QMainWindow):
 
     # Signal Summution
     def signalSummitionPlot(self):
+        self.signalSummition = [0 for _ in range(0,1000)]
+
         i = 0
-        self.signalSummition = [0 for i in range(0,1000)]
         while i < self.signalsTable.rowCount() :
             frequency = self.signalsTable.item(i,0).data(0)[:-2]
             magnitude = self.signalsTable.item(i,1).data(0)
@@ -407,17 +418,11 @@ class Window(QMainWindow):
             self.signalSummition = np.add(self.signalSummition,y)
 
         self.summitionPlot.clearPlot()
-        self.summitionPlot.plotSignal(np.linspace(-np.pi/2, np.pi/2, 1000), self.signalSummition)
+        self.summitionPlot.plotSignal(np.linspace(-np.pi, np.pi, 1000), self.signalSummition)
 
     # Delete signal from the list
     def deleteSignal(self):
         currentIndex = int(self.signalsList.currentIndex()) - 1
-
-        frequency = self.signalsTable.item(int(self.signalsList.currentText()[7])-1,0).data(0)[:-2]
-        magnitude = self.signalsTable.item(int(self.signalsList.currentText()[7])-1,1).data(0)
-        phase = self.signalsTable.item(int(self.signalsList.currentText()[7])-1,2).data(0)[:-1]
-
-        y,_ = self.getContinuosSignal(frequency, magnitude, phase)
 
         self.signalsTable.removeRow(int(self.signalsList.currentText()[7])-1)        
         self.signalsList.removeItem(self.signalsList.currentIndex())
@@ -439,21 +444,29 @@ class Window(QMainWindow):
             self.statusBar.showMessage("The secondary graph be hidden!")
             self.hideButton.setIcon(QIcon("images/hide.svg"))
 
-
+    # Return continuos signal given frequency, magnitude and phase: A cos(2*pi*freq*t + phase) 
     def getContinuosSignal(self, frequency, magnitude, phase):
-        tMin = -np.pi/2
-        tMax = np.pi/2
+        tMin = -np.pi
+        tMax = np.pi
 
         t = np.linspace(tMin, tMax, 1000)
-        y = int(magnitude) * np.sin(2 * np.pi * int(frequency) * t + int(phase))
+        y = float(magnitude) * np.cos(2 * np.pi * float(frequency) * t + float(phase))
 
         return (y, t)
 
     def moveToSamplePlot(self):
+        freqList = list()
+        i = 0
+        # Get Fmax
+        while i < self.signalsTable.rowCount() :
+            frequency = self.signalsTable.item(i,0).data(0)[:-2]
+            freqList.append(frequency)
+            i+=1
+        self.maxFreq = max(freqList)
         self.mainPlot.clearSignal()
-        self.mainPlot.set_data(self.signalSummition, [i for i in range(0,len(self.signalSummition))])
+        self.mainPlot.set_data(self.signalSummition, np.linspace(-np.pi, np.pi, 1000))
         self.mainPlot.plotSignal()
-
+    
     def connect(self):
         pass
     
@@ -466,3 +479,37 @@ class Window(QMainWindow):
 
         if exitDlg == QMessageBox.Yes:
             sys.exit()
+
+class popupWindow(QMainWindow):
+    """Main Window."""
+    def __init__(self, parent=Window):
+        super(popupWindow, self).__init__(parent)
+
+        self.parent = parent
+
+        self.setWindowTitle("Enter maximum frequency of specified signal:")
+
+        centralMainWindow = QWidget(self)
+        self.setCentralWidget(centralMainWindow)
+
+        # Outer Layout
+        outerLayout = QGridLayout()
+
+        self.maxFrequencyLabel = QLabel("Enter Fmax:")
+        self.maxFrequencyInput = QSpinBox()
+        self.maxFrequencyButton = QPushButton("Enter")
+
+        outerLayout.addWidget(self.maxFrequencyLabel,0,0)
+        outerLayout.addWidget(self.maxFrequencyInput,0,1,1,-1)
+        outerLayout.addWidget(self.maxFrequencyButton,2,3)
+
+        self.maxFrequencyButton.clicked.connect(self.getFreq)
+
+        centralMainWindow.setLayout(outerLayout)
+
+    def getFreq(self):
+        while float(self.maxFrequencyInput.text()) > 0 :
+            self.parent.browseSignal(float(self.maxFrequencyInput.text()))
+            self.hide()
+            break
+        

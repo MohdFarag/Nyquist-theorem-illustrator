@@ -5,6 +5,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 from scipy import signal
+from scipy.special import sinc
+
 
 # Definition of Main Color Palette
 from Defs import COLOR1, COLOR2, COLOR3, COLOR4, COLOR5
@@ -28,6 +30,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.y = [0]
         self.x = np.linspace(-np.pi/2, np.pi/2, 1000)
         self.sampling = 1
+        self.sampledTime, self.sampledSignal = [],[]
         
         self.fig = Figure(facecolor=f"{COLOR1}")
 
@@ -50,9 +53,12 @@ class MplCanvas(FigureCanvasQTAgg):
         super(MplCanvas, self).__init__(self.fig)
 
 
-    def set_data(self, y, x, sampling=1):
+    def set_data(self, y, x, sampling=1 ,sampledTime=[], sampledSignal=[]):
         self.y = y
         self.x = x
+        
+        self.sampledTime = sampledTime 
+        self.sampledSignal = sampledSignal
         self.sampling = sampling
 
     def plotSignal(self):
@@ -60,33 +66,49 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes.plot(self.x, self.y)
         self.draw()
 
-    def resampleSingal(self, newSample):
-        self.sampling = newSample
+    def sample(self, originalSignal, sampling_freq, analog_time):
+        time_interval = analog_time[-1]
+        nsamples = int(np.ceil(sampling_freq * time_interval))
+        if nsamples > 0:
+            sampling_time = np.arange(min(analog_time), time_interval, 1/sampling_freq)
+            sampling_values = [originalSignal[np.searchsorted(analog_time, t)] for t in sampling_time]
+            return (sampling_time, sampling_values)
+        return ([], [])
 
+    def sampleSingal(self, newSample):
+        self.sampling = newSample
         self.clearSignal()
         
-        f = signal.resample(self.y, self.sampling)
-        xNew = np.linspace(min(self.x), max(self.x), self.sampling)
-        
+        self.sampledTime, self.sampledSignal = self.sample(self.y, self.sampling, self.x)
+                
         # Plot Original Signal
         self.axes.plot(self.x, self.y)
+        
         # Plot Sampled Signal
-        self.axes.plot(xNew, f, '.', self.sampling)
+        self.axes.plot(self.sampledTime, self.sampledSignal, '.', self.sampling)
+        
+        # Plot Sampled Signal dashed
+        resampledSignal,resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime)
+
+        # Plot dashed line
+        self.axes.plot(resampledTime, resampledSignal, 'r--', self.sampling)
 
         self.draw()
 
-    def reConstructSingal(self):     
+        return self.sampledTime, self.sampledSignal
+    
+    def resampleSignalLine(self):
         self.clearSignal()
+
+        # Generate resample signal        
+        resampledSignal = signal.resample(self.sampledSignal, len(self.y))
         
-        f = signal.resample(self.y, self.sampling)
-        xNew = np.linspace(min(self.x), max(self.x), self.sampling)
-        
-        # Plot Sampled Signal
-        self.axes.plot(xNew, f, '-', self.sampling)
+        # Plot resample signal 
+        self.axes.plot(self.x, resampledSignal, '-', self.sampling)
 
         self.draw()
-        
+
     def clearSignal(self):
         self.axes.clear()
         self.axes.set_xlim([min(self.x), max(self.x)])
-        self.axes.set_ylim([min(self.y), max(self.y)])
+        self.axes.set_ylim([min(self.y), max(self.y)+1])
