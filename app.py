@@ -254,7 +254,7 @@ class Window(QMainWindow):
             self.frequencyEndLabel.setText(text)
 
             # Sample signal
-            sampledTime, sampledSignal = self.mainPlot.sampleSingal(sampling_freq + 1)
+            sampledTime, sampledSignal = self.mainPlot.sampleSingal(1.5 * sampling_freq)
 
             # Update Data in reconstructed Plot
             self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, sampling_freq + 1, sampledTime, sampledSignal)
@@ -568,7 +568,6 @@ class Window(QMainWindow):
             self.signalsList.addItem("Signal " + str(self.signalsTable.rowCount()))
 
             self.signalSummitionPlot()
-
 
     def exit(self):
         exitDlg = QMessageBox.critical(self,
