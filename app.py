@@ -4,7 +4,7 @@
 from signal import signal
 from plotter import Plot
 from plotterMatplotlib import MplCanvas
-
+MaxF = 70
 # Definition of Main Color Palette
 from Defs import COLOR1,COLOR2,COLOR3,COLOR4, COLOR5
 
@@ -108,7 +108,7 @@ class Window(QMainWindow):
         openFile = QAction("Open...",self)
         openFile.setShortcut("Ctrl+o")
         openFile.setStatusTip('Open a new signal')
-        openFile.triggered.connect(self.getMaxFreq)
+        openFile.triggered.connect(self.browseSignal)
 
         fileMenu.addAction(openFile)
 
@@ -254,7 +254,7 @@ class Window(QMainWindow):
             self.frequencyEndLabel.setText(text)
 
             # Sample signal
-            sampledTime, sampledSignal = self.mainPlot.sampleSingal(1.5 * sampling_freq)
+            sampledTime, sampledSignal = self.mainPlot.sampleSingal(sampling_freq)
 
             # Update Data in reconstructed Plot
             self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, sampling_freq + 1, sampledTime, sampledSignal)
@@ -420,7 +420,6 @@ class Window(QMainWindow):
 
     # Browse signal
     def browseSignal(self, maxFreq):
-        self.maxFreq = maxFreq
         path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv)")
         if path == "":
                 return
@@ -430,6 +429,9 @@ class Window(QMainWindow):
             self.mainDataPlot = self.mainDataPlot.values.tolist()
             self.timePlot = pd.read_csv(path).iloc[:,0]
             self.timePlot = self.timePlot.values.tolist()
+
+        freqs = np.fft.fft(self.timePlot)
+        self.maxFreq = max(np.abs(freqs))
 
         self.mainPlot.clearSignal()
         self.mainPlot.set_data(self.mainDataPlot, self.timePlot)
@@ -508,9 +510,10 @@ class Window(QMainWindow):
         # Get Fmax
         while i < self.signalsTable.rowCount() :
             frequency = self.signalsTable.item(i,0).data(0)[:-2]
-            freqList.append(frequency)
+            freqList.append(float(frequency))
             i+=1
         self.maxFreq = max(freqList)
+        print(freqList)
         self.mainPlot.clearSignal()
         self.mainPlot.set_data(self.signalSummition, np.linspace(-np.pi, np.pi, 1000))
         self.mainPlot.plotSignal()

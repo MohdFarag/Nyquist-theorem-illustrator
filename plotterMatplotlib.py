@@ -1,4 +1,5 @@
 # importing Qt widgets
+FACTOR = 1.1
 from turtle import color
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -73,13 +74,15 @@ class MplCanvas(FigureCanvasQTAgg):
             sampling_time = np.arange(min(analog_time), time_interval, 1/sampling_freq)
             sampling_values = [originalSignal[np.searchsorted(analog_time, t)] for t in sampling_time]
             return (sampling_time, sampling_values)
-        return ([], [])
+        # return null list if there is no samples
+        return ([0], [0])
+
 
     def sampleSingal(self, newSample):
         self.sampling = newSample
         self.clearSignal()
         
-        self.sampledTime, self.sampledSignal = self.sample(self.y, self.sampling, self.x)
+        self.sampledTime, self.sampledSignal = self.sample(self.y, FACTOR*self.sampling, self.x)
                 
         # Plot Original Signal
         self.axes.plot(self.x, self.y)
@@ -88,8 +91,8 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes.plot(self.sampledTime, self.sampledSignal, '.', self.sampling)
         
         # Plot Sampled Signal dashed
-        resampledSignal,resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime)
-
+        resampledSignal, resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime)
+        
         # Plot dashed line
         self.axes.plot(resampledTime, resampledSignal, 'r--', self.sampling)
 
@@ -101,10 +104,10 @@ class MplCanvas(FigureCanvasQTAgg):
         self.clearSignal()
 
         # Generate resample signal        
-        resampledSignal = signal.resample(self.sampledSignal, len(self.y))
+        resampledSignal, resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime)
         
         # Plot resample signal 
-        self.axes.plot(self.x, resampledSignal, '-', self.sampling)
+        self.axes.plot(resampledTime, resampledSignal, '-', self.sampling)
 
         self.draw()
 
