@@ -3,6 +3,7 @@
 # import Plotter.py Class
 import ast
 from cmath import nan
+from math import floor
 from signal import signal
 from plotter import Plot
 from plotterMatplotlib import MplCanvas
@@ -238,7 +239,7 @@ class Window(QMainWindow):
             sampling_freq = float(value)/100 * float(self.maxFreq)
 
             # Update values of labels of slider
-            self.frequencyStartLabel.setText(str(round(sampling_freq, 2)) + " Hz")
+            self.frequencyStartLabel.setText(str(round(sampling_freq, 1)) + " Hz")
             text = str(value/100) + u'F\u2098\u2090\u2093'
             self.frequencyEndLabel.setText(text)
 
@@ -246,7 +247,7 @@ class Window(QMainWindow):
             sampledTime, sampledSignal = self.mainPlot.sampleSingal(sampling_freq)
 
             # Update Data in reconstructed Plot
-            self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, sampling_freq + 1, sampledTime, sampledSignal)
+            self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, sampling_freq, sampledTime, sampledSignal)
 
 
     # Composer Layout Tab
@@ -281,7 +282,7 @@ class Window(QMainWindow):
                             background: {COLOR4};
                             color: {COLOR1};""")
 
-        self.plotButton = QPushButton("Plot")
+        self.plotButton = QPushButton("Plot | Add")
         self.plotButton.setStyleSheet(f"""font-size:14px; 
                             border-radius: 6px;
                             border: 1px solid {COLOR1};
@@ -425,18 +426,30 @@ class Window(QMainWindow):
                 return
                 
         if fileExtension == "csv(*.csv)":
-            self.mainDataPlot = pd.read_csv(path).iloc[:,1]
-            self.mainDataPlot = self.mainDataPlot.values.tolist()
-            self.timePlot = pd.read_csv(path).iloc[:,0]
-            self.timePlot = self.timePlot.values.tolist()
+            self.mainDataPlot = pd.read_csv(path).iloc[:,1].values.tolist()
+            self.timePlot = pd.read_csv(path).iloc[:,0].values.tolist()
 
-        # freqs = np.fft.rfft(self.mainDataPlot)
-        freqFftData = np.fft.rfftfreq(n=len(self.timePlot), d=(self.timePlot[-1]-self.timePlot[-2]) )
-        self.maxFreq = max(freqFftData)
+        self.maxFreq = self.getFmax() # Get Frequency Maximum
 
         self.mainPlot.clearSignal()
         self.mainPlot.set_data(self.mainDataPlot, self.timePlot)
         self.mainPlot.plotSignal()
+
+    def getFmax(self):
+        # gets array of fft magnitudes
+        fft_magnitudes = np.abs(np.fft.fft(self.mainDataPlot))
+        # gets array of frequencies
+        fft_frequencies = np.fft.fftfreq(len(self.timePlot), self.timePlot[2]-self.timePlot[1])
+        # create new "clean array" of frequencies
+        fft_clean_frequencies_array = []
+        for index in range(len(fft_frequencies)):
+            # checks if signigifcant frequency is present
+            if fft_magnitudes[index] > np.average(fft_magnitudes):
+                fft_clean_frequencies_array.append(fft_frequencies[index])
+
+        maxFreq = floor(max(fft_clean_frequencies_array))
+
+        return maxFreq
 
     def reconstructSample(self):
         self.reconstractionPlot.resampleSignalLine()
@@ -447,7 +460,7 @@ class Window(QMainWindow):
         magnitude = float(self.magnitudeBox.text())
         phase = float(self.phaseBox.text())
 
-        signal,t = self.getContinuosSignal(freq, magnitude, phase)
+        signal, t = self.getContinuosSignal(freq, magnitude, phase)
 
         self.sinusoidalPlot.plotSignal(t, signal)
         self.signalsTable.addData(freq, magnitude, phase)
@@ -469,7 +482,7 @@ class Window(QMainWindow):
             self.signalSummition = np.add(self.signalSummition,y)
 
         self.summitionPlot.clearPlot()
-        self.summitionPlot.plotSignal(np.linspace(-np.pi, np.pi, 1000), self.signalSummition)
+        self.summitionPlot.plotSignal(np.linspace(-2*np.pi, 2*np.pi, 1000), self.signalSummition)
 
     # Delete signal from the list
     def deleteSignal(self):
@@ -516,7 +529,7 @@ class Window(QMainWindow):
             i+=1
         self.maxFreq = max(freqList)
         self.mainPlot.clearSignal()
-        self.mainPlot.set_data(self.signalSummition, np.linspace(-np.pi, np.pi, 1000))
+        self.mainPlot.set_data(self.signalSummition, np.linspace(-2*np.pi, 2*np.pi, 1000))
         self.mainPlot.plotSignal()
     
     def connect(self):

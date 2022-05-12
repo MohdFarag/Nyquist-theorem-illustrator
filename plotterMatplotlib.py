@@ -1,12 +1,10 @@
 # importing Qt widgets
-FACTOR = 1.1
-from turtle import color
+FACTOR = 1
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 from scipy import signal
-from scipy.special import sinc
 
 
 # Definition of Main Color Palette
@@ -21,8 +19,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-
-from random import randint
 
 class MplCanvas(FigureCanvasQTAgg):
     
@@ -82,7 +78,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.sampling = newSample
         self.clearSignal()
         
-        self.sampledTime, self.sampledSignal = self.sample(self.y, FACTOR*self.sampling, self.x)
+        self.sampledTime, self.sampledSignal = self.sample(self.y, self.sampling, self.x)
                 
         # Plot Original Signal
         self.axes.plot(self.x, self.y)
@@ -100,7 +96,9 @@ class MplCanvas(FigureCanvasQTAgg):
 
         return self.sampledTime, self.sampledSignal
     
+
     def resampleSignalLine(self):
+        # Clear signal
         self.clearSignal()
 
         # Generate resample signal        
