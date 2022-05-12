@@ -1,10 +1,13 @@
 # !/usr/bin/python
 
 # import Plotter.py Class
+import ast
+from cmath import nan
 from signal import signal
 from plotter import Plot
 from plotterMatplotlib import MplCanvas
-MaxF = 70
+# MaxF = 70
+
 # Definition of Main Color Palette
 from Defs import COLOR1,COLOR2,COLOR3,COLOR4, COLOR5
 
@@ -44,6 +47,7 @@ class TableView(QTableWidget):
 
     def clearAllData(self):
         self.setRowCount(0)
+        
 class Window(QMainWindow):
     """Main Window."""
     def __init__(self):
@@ -57,21 +61,6 @@ class Window(QMainWindow):
         self.signalSummition = [0 for _ in range(0,1000)]
         self.hidden = False
         self.maxFreq = 0
-
-        self.bigExamplesList = [[[2 , 1 , 0],
-                                [6 , 1 , 0]],
-                                [[4 , 10 , 0],
-                                [8 , 1 , 90]],
-                                [[1 , 12 , 0],
-                                [2 , 10 , 0],
-                                [7 , 1 , 90],
-                                [10 , 2 , 0]],
-                                [[1 , 1 , 0],
-                                [2 , 1 , 0],
-                                [3 , 5 , 0]],
-                                [[0.5 , 10 , 0],
-                                [6 , 1 , 0],
-                                [10 , 10 , 0]]]
 
         # setting Icon
         self.setWindowIcon(QIcon('images/icon.png'))
@@ -259,9 +248,6 @@ class Window(QMainWindow):
             # Update Data in reconstructed Plot
             self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, sampling_freq + 1, sampledTime, sampledSignal)
 
-    def getMaxFreq(self):
-        freqDialog = popupWindow(self)
-        freqDialog.show()
 
     # Composer Layout Tab
     def composerLayout(self):
@@ -385,7 +371,7 @@ class Window(QMainWindow):
         summitionLayout.addWidget(summitionGroupBox, 3)
         summitionLayout.addWidget(self.summitionPlot ,7)
 
-        exampleGroupBox = QGroupBox("Examples")
+        exampleGroupBox = QGroupBox("Saved Examples")
         exampleLayout = QHBoxLayout()
         exampleGroupBox.setLayout(exampleLayout)
 
@@ -396,21 +382,35 @@ class Window(QMainWindow):
                                     background: {COLOR4};
                                     color:{COLOR1};""")
         self.examplesList.addItem("Choose...")
-        self.examplesList.addItem("Example 1")
-        self.examplesList.addItem("Example 2")
-        self.examplesList.addItem("Example 3")
-        self.examplesList.addItem("Example 4")
-        self.examplesList.addItem("Example 5")
+        # Read Data of examples
+        self.bigExamplesList = self.readExamples()
 
-        self.preview = QPushButton("Preview example")
+        self.preview = QPushButton("Preview")
         self.preview.setStyleSheet(f"""background: {COLOR1};
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px;
                                 color:{COLOR4}""")
 
-        exampleLayout.addWidget(self.examplesList)
-        exampleLayout.addWidget(self.preview)
+        self.export = QPushButton("Export")
+        self.export.setStyleSheet(f"""background: {COLOR1};
+                                border-radius: 6px;
+                                border: 1px solid {COLOR1};
+                                padding: 5px 15px;
+                                color:{COLOR4}""")
+        
+        self.deleteEx = QPushButton("")
+        self.deleteEx.setIcon(QIcon("images/clear.svg"))
+        self.deleteEx.setStyleSheet(f"""background: {COLOR1};
+                                border-radius: 6px;
+                                border: 1px solid {COLOR1};
+                                padding: 5px 15px;""")
+
+
+        exampleLayout.addWidget(self.examplesList, 10)
+        exampleLayout.addWidget(self.preview, 4)
+        exampleLayout.addWidget(self.export, 4)
+        exampleLayout.addWidget(self.deleteEx, 1)
 
         composerLayout.addLayout(sinusoidalLayout)
         composerLayout.addLayout(summitionLayout)
@@ -419,7 +419,7 @@ class Window(QMainWindow):
         self.composerTab.setLayout(composerLayout)
 
     # Browse signal
-    def browseSignal(self, maxFreq):
+    def browseSignal(self):
         path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv)")
         if path == "":
                 return
@@ -430,8 +430,9 @@ class Window(QMainWindow):
             self.timePlot = pd.read_csv(path).iloc[:,0]
             self.timePlot = self.timePlot.values.tolist()
 
-        freqs = np.fft.fft(self.timePlot)
-        self.maxFreq = max(np.abs(freqs))
+        # freqs = np.fft.rfft(self.mainDataPlot)
+        freqFftData = np.fft.rfftfreq(n=len(self.timePlot), d=(self.timePlot[-1]-self.timePlot[-2]) )
+        self.maxFreq = max(freqFftData)
 
         self.mainPlot.clearSignal()
         self.mainPlot.set_data(self.mainDataPlot, self.timePlot)
@@ -462,7 +463,7 @@ class Window(QMainWindow):
             magnitude = self.signalsTable.item(i,1).data(0)
             phase = self.signalsTable.item(i,2).data(0)[:-1]
             
-            y,_ = self.getContinuosSignal(frequency, magnitude, phase)
+            y, _ = self.getContinuosSignal(frequency, magnitude, phase)
             i+=1
             
             self.signalSummition = np.add(self.signalSummition,y)
@@ -472,14 +473,15 @@ class Window(QMainWindow):
 
     # Delete signal from the list
     def deleteSignal(self):
-        currentIndex = int(self.signalsList.currentIndex()) - 1
+        if self.signalsList.currentText() != "Choose...":
+            currentIndex = int(self.signalsList.currentIndex()) - 1
 
-        self.signalsTable.removeRow(int(self.signalsList.currentText()[7])-1)        
-        self.signalsList.removeItem(self.signalsList.currentIndex())
+            self.signalsTable.removeRow(int(self.signalsList.currentText()[7])-1)        
+            self.signalsList.removeItem(self.signalsList.currentIndex())
 
-        while currentIndex < self.signalsList.count():
-            currentIndex +=1
-            self.signalsList.setItemText(currentIndex,"Signal " + str(currentIndex))
+            while currentIndex < self.signalsList.count():
+                currentIndex += 1
+                self.signalsList.setItemText(currentIndex,"Signal " + str(currentIndex))
 
     # Hide secondary Plot        
     def hideSecGraph(self):
@@ -496,8 +498,8 @@ class Window(QMainWindow):
 
     # Return continuos signal given frequency, magnitude and phase: A cos(2*pi*freq*t + phase) 
     def getContinuosSignal(self, frequency, magnitude, phase):
-        tMin = -np.pi
-        tMax = np.pi
+        tMin = -2*np.pi
+        tMax = 2*np.pi
 
         t = np.linspace(tMin, tMax, 1000)
         y = float(magnitude) * np.sin(2 * np.pi * float(frequency) * t + float(phase))
@@ -513,7 +515,6 @@ class Window(QMainWindow):
             freqList.append(float(frequency))
             i+=1
         self.maxFreq = max(freqList)
-        print(freqList)
         self.mainPlot.clearSignal()
         self.mainPlot.set_data(self.signalSummition, np.linspace(-np.pi, np.pi, 1000))
         self.mainPlot.plotSignal()
@@ -521,7 +522,6 @@ class Window(QMainWindow):
     def connect(self):
         self.sliderMainPlot.valueChanged[int].connect(self.freqChange)
         self.hideButton.clicked.connect(self.hideSecGraph)
-
 
         self.deleteButton.clicked.connect(self.deleteSignal)
         self.saveExampleButton.clicked.connect(self.AddExample)
@@ -531,19 +531,91 @@ class Window(QMainWindow):
         self.plotButton.clicked.connect(self.plotSinusoidalSignal)
         self.plotReconstructButton.clicked.connect(self.reconstructSample)
 
-        self.preview.clicked.connect(self.examplesPreview)
+        self.preview.clicked.connect(self.loadExample)
+        self.export.clicked.connect(self.exportExample)
+        self.deleteEx.clicked.connect(self.deleteExample)
 
     ### Examples Functions
+
+    def deleteExample(self):
+        currentIndex = int(self.examplesList.currentIndex()) - 1
+
+        self.bigExamplesList.pop(int(self.examplesList.currentText()[-1])-1)
+        self.examplesList.removeItem(self.examplesList.currentIndex())
+
+        while currentIndex < self.examplesList.count():
+            currentIndex +=1
+            self.examplesList.setItemText(currentIndex,"Example " + str(currentIndex))
+        
+        df = pd.DataFrame(self.bigExamplesList)
+        df.to_csv('ExamplesList.csv')
+        
+    def exportExample(self):
+        exampleIndex = int(self.examplesList.currentText()[-1]) - 1 # compoBox Begin from 1
+        exampleInfo = self.bigExamplesList[exampleIndex]
+        
+        t = np.linspace(-2*np.pi, 2*np.pi, 1000)
+        signal = 0 * t
+
+        for signalInfo in exampleInfo:
+            freq = signalInfo[0]
+            magnitude = signalInfo[1]
+            phase = signalInfo[2]
+
+            partSignal, _ = self.getContinuosSignal(freq, magnitude, phase)
+            signal += partSignal
+        
+        dict = {'time': t, 'magnitude': signal}  
+        df = pd.DataFrame(dict)
+        output_file, _ = QFileDialog.getSaveFileName(self, 'Export File', None, 'CSV files (.csv);;All Files()')
+        if output_file != '':
+            if QFileInfo(output_file).suffix() == "" : output_file += '.csv'
+
+        df.to_csv(output_file, index=False)
+    
+    # Transfer list to string
+    def stringToList(self, stringList):
+        List = ast.literal_eval(stringList)
+        try:
+            List = [n.strip() for n in List]
+        except:
+            pass
+        List = [float(n) for n in List]
+
+        return List
+
+    # Read Examples from csv file 
+    def readExamples(self):
+        
+            listExamples = list()
+            df = pd.read_csv("ExamplesList.csv")
+            for i in range(df.shape[0]):
+                listExample = list()
+                for j in range(1, df.shape[1]):
+                    signalData = (df.iloc[i,j])
+                    if not pd.isna(signalData):
+                        signalData = self.stringToList(signalData)
+                        listExample.append(signalData)
+                listExamples.append(listExample)
+            
+            for _ in listExamples: 
+                self.examplesList.addItem("Example " + str(self.examplesList.count()))
+
+            return listExamples        
+        # except:
+        #     QMessageBox.warning(self, "Error", "Error in open file.")
+        #     return []
     
     # Preview loaded example 
-    def examplesPreview(self):
+    def loadExample(self):
         exampleIndex = int(self.examplesList.currentText()[-1]) - 1 # compoBox Begin from 1
         exampleInfo = self.bigExamplesList[exampleIndex]
 
         self.signalsTable.clearAllData()
         self.signalsList.clear()
 
-        self.generateExample(exampleInfo)
+        self.signalsList.addItem("Choose...")
+        self.previewExample(exampleInfo)
 
     def AddExample(self):
         signalSum = []
@@ -554,14 +626,20 @@ class Window(QMainWindow):
             phase = self.signalsTable.item(i,2).data(0)[:-1]
             
             signalInfo = [frequency, magnitude, phase]
-            signalSum.append(signalInfo)
-            
+            signalSum.append(signalInfo)      
             i+=1
-        
+         
         self.bigExamplesList.append(signalSum)
         self.examplesList.addItem("Example " + str(self.examplesList.count()))
 
-    def generateExample(self, exampleInfo) :
+        df = pd.DataFrame(self.bigExamplesList)
+        
+        try:
+            df.to_csv('ExamplesList.csv')
+        except:
+            QMessageBox.critical(self, "Error", "There is a problem, be sure that the examples.csv is closed.")
+
+    def previewExample(self, exampleInfo) :
         for signalInfo in exampleInfo:
             freq = signalInfo[0]
             magnitude = signalInfo[1]
@@ -581,37 +659,3 @@ class Window(QMainWindow):
 
         if exitDlg == QMessageBox.Yes:
             sys.exit()
-
-class popupWindow(QMainWindow):
-    """Main Window."""
-    def __init__(self, parent=Window):
-        super(popupWindow, self).__init__(parent)
-
-        self.parent = parent
-
-        self.setWindowTitle("Enter maximum frequency of specified signal:")
-
-        centralMainWindow = QWidget(self)
-        self.setCentralWidget(centralMainWindow)
-
-        # Outer Layout
-        outerLayout = QGridLayout()
-
-        self.maxFrequencyLabel = QLabel("Enter Fmax:")
-        self.maxFrequencyInput = QSpinBox()
-        self.maxFrequencyButton = QPushButton("Enter")
-
-        outerLayout.addWidget(self.maxFrequencyLabel,0,0)
-        outerLayout.addWidget(self.maxFrequencyInput,0,1,1,-1)
-        outerLayout.addWidget(self.maxFrequencyButton,2,3)
-
-        self.maxFrequencyButton.clicked.connect(self.getFreq)
-
-        centralMainWindow.setLayout(outerLayout)
-
-    def getFreq(self):
-        while float(self.maxFrequencyInput.text()) > 0 :
-            self.parent.browseSignal(float(self.maxFrequencyInput.text()))
-            self.hide()
-            break
-        
