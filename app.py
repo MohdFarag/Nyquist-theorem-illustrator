@@ -7,7 +7,6 @@ from math import floor
 from signal import signal
 from plotter import Plot
 from plotterMatplotlib import MplCanvas
-# MaxF = 70
 
 # Definition of Main Color Palette
 from Defs import COLOR1,COLOR2,COLOR3,COLOR4, COLOR5
@@ -248,7 +247,6 @@ class Window(QMainWindow):
 
             # Update Data in reconstructed Plot
             self.reconstractionPlot.set_data(self.mainPlot.y, self.mainPlot.x, sampling_freq, sampledTime, sampledSignal)
-
 
     # Composer Layout Tab
     def composerLayout(self):
@@ -598,8 +596,7 @@ class Window(QMainWindow):
         return List
 
     # Read Examples from csv file 
-    def readExamples(self):
-        
+    def readExamples(self):        
             listExamples = list()
             df = pd.read_csv("ExamplesList.csv")
             for i in range(df.shape[0]):

@@ -1,5 +1,4 @@
 # importing Qt widgets
-FACTOR = 1
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -75,10 +74,11 @@ class MplCanvas(FigureCanvasQTAgg):
 
 
     def sampleSingal(self, newSample):
-        self.sampling = newSample
         self.clearSignal()
-        
-        self.sampledTime, self.sampledSignal = self.sample(self.y, self.sampling, self.x)
+
+        # Update new sampling rate
+        self.sampling = newSample
+        self.sampledTime, self.sampledSignal = self.sample(self.y, self.sampling, self.x) # Sample data
                 
         # Plot Original Signal
         self.axes.plot(self.x, self.y)
@@ -87,7 +87,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes.plot(self.sampledTime, self.sampledSignal, '.', self.sampling)
         
         # Plot Sampled Signal dashed
-        resampledSignal, resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime)
+        resampledSignal, resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime) # Sinc interpolation
         
         # Plot dashed line
         self.axes.plot(resampledTime, resampledSignal, 'r--', self.sampling)
