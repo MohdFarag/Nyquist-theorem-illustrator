@@ -338,23 +338,15 @@ class Window(QMainWindow):
         listLayout.addWidget(self.signalsList,4)
         listLayout.addWidget(self.deleteButton,1)
         
-        self.saveExampleButton = QPushButton("Save")
+        self.saveExampleButton = QPushButton("Append Example")
         self.saveExampleButton.setStyleSheet(f"""background: {COLOR1};
-                                border-radius: 6px;
-                                border: 1px solid {COLOR1};
-                                padding: 5px 15px;
-                                color:{COLOR4}""")
-
-        self.confirmButton = QPushButton("Mix | Plot")
-        self.confirmButton.setStyleSheet(f"""background: {COLOR1};
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
                                 padding: 5px 15px;
                                 color:{COLOR4}""")
         
         saveAndConfLayout = QHBoxLayout()
-        saveAndConfLayout.addWidget(self.saveExampleButton,2)
-        saveAndConfLayout.addWidget(self.confirmButton,2)
+        saveAndConfLayout.addWidget(self.saveExampleButton)
 
         self.moveSamplingButton = QPushButton("Moving to Main Illustrator")
         self.moveSamplingButton.setStyleSheet(f"""background: {COLOR1};
@@ -388,14 +380,7 @@ class Window(QMainWindow):
         # Read Data of examples
         self.bigExamplesList = self.readExamples()
 
-        self.preview = QPushButton("Preview")
-        self.preview.setStyleSheet(f"""background: {COLOR1};
-                                border-radius: 6px;
-                                border: 1px solid {COLOR1};
-                                padding: 5px 15px;
-                                color:{COLOR4}""")
-
-        self.export = QPushButton("Export")
+        self.export = QPushButton("Save as")
         self.export.setStyleSheet(f"""background: {COLOR1};
                                 border-radius: 6px;
                                 border: 1px solid {COLOR1};
@@ -411,7 +396,6 @@ class Window(QMainWindow):
 
 
         exampleLayout.addWidget(self.examplesList, 10)
-        exampleLayout.addWidget(self.preview, 4)
         exampleLayout.addWidget(self.export, 4)
         exampleLayout.addWidget(self.deleteEx, 1)
 
@@ -468,9 +452,11 @@ class Window(QMainWindow):
         self.signalsTable.addData(freq, magnitude, phase)
         self.signalsList.addItem("Signal " + str(self.signalsTable.rowCount()))
 
+        self.signalSummitionPlot()
+
     # Signal Summution
     def signalSummitionPlot(self):
-        self.signalSummition = [0 for _ in range(0,1000)]
+        self.signalSummition = np.zeros(1000)
 
         i = 0
         while i < self.signalsTable.rowCount() :
@@ -497,6 +483,9 @@ class Window(QMainWindow):
             while currentIndex < self.signalsList.count():
                 currentIndex += 1
                 self.signalsList.setItemText(currentIndex,"Signal " + str(currentIndex))
+
+        
+        self.signalSummitionPlot()
 
     # Hide secondary Plot        
     def hideSecGraph(self):
@@ -540,13 +529,12 @@ class Window(QMainWindow):
 
         self.deleteButton.clicked.connect(self.deleteSignal)
         self.saveExampleButton.clicked.connect(self.AddExample)
-        self.confirmButton.clicked.connect(self.signalSummitionPlot)
         self.moveSamplingButton.clicked.connect(self.moveToSamplePlot)
         
         self.plotButton.clicked.connect(self.plotSinusoidalSignal)
         self.plotReconstructButton.clicked.connect(self.reconstructSample)
 
-        self.preview.clicked.connect(self.loadExample)
+        self.examplesList.currentTextChanged.connect(self.loadExample)
         self.export.clicked.connect(self.exportExample)
         self.deleteEx.clicked.connect(self.deleteExample)
 
@@ -582,7 +570,7 @@ class Window(QMainWindow):
         
         dict = {'time': t, 'magnitude': signal}  
         df = pd.DataFrame(dict)
-        output_file, _ = QFileDialog.getSaveFileName(self, 'Export File', None, 'CSV files (.csv);;All Files()')
+        output_file, _ = QFileDialog.getSaveFileName(self, 'Save as File', None, 'CSV files (.csv);;All Files()')
         if output_file != '':
             if QFileInfo(output_file).suffix() == "" : output_file += '.csv'
 
@@ -622,14 +610,15 @@ class Window(QMainWindow):
     
     # Preview loaded example 
     def loadExample(self):
-        exampleIndex = int(self.examplesList.currentText()[-1]) - 1 # compoBox Begin from 1
-        exampleInfo = self.bigExamplesList[exampleIndex]
+        if self.examplesList.currentText() != "Choose...":
+            exampleIndex = int(self.examplesList.currentText()[-1]) - 1 # compoBox Begin from 1
+            exampleInfo = self.bigExamplesList[exampleIndex]
 
-        self.signalsTable.clearAllData()
-        self.signalsList.clear()
+            self.signalsTable.clearAllData()
+            self.signalsList.clear()
 
-        self.signalsList.addItem("Choose...")
-        self.previewExample(exampleInfo)
+            self.signalsList.addItem("Choose...")
+            self.previewExample(exampleInfo)
 
     def AddExample(self):
         signalSum = []
