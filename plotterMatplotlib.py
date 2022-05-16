@@ -63,10 +63,10 @@ class MplCanvas(FigureCanvasQTAgg):
         self.draw()
 
     def sample(self, originalSignal, sampling_freq, analog_time):
-        time_interval = analog_time[-1]
+        time_interval = analog_time[-1] - analog_time[0]
         nsamples = int(np.ceil(sampling_freq * time_interval))
         if nsamples > 0:
-            sampling_time = np.arange(min(analog_time), time_interval, 1/sampling_freq)
+            sampling_time = np.arange(min(analog_time), time_interval/2, 1/sampling_freq)
             sampling_values = [originalSignal[np.searchsorted(analog_time, t)] for t in sampling_time]
             return (sampling_time, sampling_values)
         # return null list if there is no samples
@@ -87,25 +87,35 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes.plot(self.sampledTime, self.sampledSignal, '.', self.sampling)
         
         # Plot Sampled Signal dashed
-        resampledSignal, resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime) # Sinc interpolation
-        
+        resampledSignal = self.sincInterpolation(self.sampledSignal, self.sampledTime) # Sinc interpolation
+
         # Plot dashed line
-        self.axes.plot(resampledTime, resampledSignal, 'r--', self.sampling)
+        self.axes.plot(self.x, resampledSignal, 'r--', self.sampling)
 
         self.draw()
 
         return self.sampledTime, self.sampledSignal
-    
+
+    def sincInterpolation(self, sampledSignal, sampledTime):
+        inputTime = np.array(sampledTime)
+        inputMag = np.array(sampledSignal)
+
+        period = inputTime[1] - inputTime[0]
+        
+        sincM = np.tile(self.x, (len(inputTime), 1)) - np.tile(inputTime[:, np.newaxis], (1, len(self.x)))
+        outputMag = np.dot(inputMag, np.sinc(sincM / period))
+        
+        return outputMag
 
     def resampleSignalLine(self):
         # Clear signal
         self.clearSignal()
 
         # Generate resample signal        
-        resampledSignal, resampledTime = signal.resample(self.sampledSignal, len(self.y), self.sampledTime)
-        
+        resampledSignal = self.sincInterpolation(self.sampledSignal, self.sampledTime)
+
         # Plot resample signal 
-        self.axes.plot(resampledTime, resampledSignal, '-', self.sampling)
+        self.axes.plot(self.x, resampledSignal, '-', self.sampling)
 
         self.draw()
 

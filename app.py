@@ -265,20 +265,21 @@ class Window(QMainWindow):
                             padding: 5px 15px; 
                             background: {COLOR4};
                             color: {COLOR1};""")
-
+        self.freqBox.setValue(int(1))
         # Magnitude Text Box
         self.magnitudeBox = QSpinBox(self)
         self.magnitudeBox.setStyleSheet(f"""font-size:14px; 
                                 padding: 5px 15px; 
                                 background: {COLOR4};
                                 color: {COLOR1};""")
-
+        self.magnitudeBox.setValue(int(1))
         # Phase Text Box
         self.phaseBox = QSpinBox(self)
         self.phaseBox.setStyleSheet(f"""font-size:14px; 
                             padding: 5px 15px; 
                             background: {COLOR4};
                             color: {COLOR1};""")
+        self.phaseBox.setValue(int(0))
 
         self.plotButton = QPushButton("Plot | Add")
         self.plotButton.setStyleSheet(f"""font-size:14px; 
@@ -290,8 +291,11 @@ class Window(QMainWindow):
 
         self.plotButton.setIcon(QIcon("images/plot.svg"))
 
+        panelSinusoidal.addWidget(QLabel("Frequency:"))
         panelSinusoidal.addWidget(self.freqBox)
+        panelSinusoidal.addWidget(QLabel("Magnitude:"))
         panelSinusoidal.addWidget(self.magnitudeBox)
+        panelSinusoidal.addWidget(QLabel("Phase:"))
         panelSinusoidal.addWidget(self.phaseBox)
         panelSinusoidal.addWidget(self.plotButton)
         
