@@ -1,10 +1,7 @@
 # !/usr/bin/python
 
-# import Plotter.py Class
 import ast
-from cmath import nan
 from math import floor
-from signal import signal
 from plotter import Plot
 from plotterMatplotlib import MplCanvas
 
@@ -27,7 +24,10 @@ from pyqtgraph.dockarea import *
 
 import sys
 import os
-from scipy.fft import rfft, fft, fftfreq
+
+# CONST
+TMIN = -np.pi
+TMAX = np.pi
 
 class TableView(QTableWidget):
     def __init__(self,*args):
@@ -457,20 +457,20 @@ class Window(QMainWindow):
     # Signal Summution
     def signalSummitionPlot(self):
         self.signalSummition = np.zeros(1000)
-
+        t = np.array([])
         i = 0
         while i < self.signalsTable.rowCount() :
             frequency = self.signalsTable.item(i,0).data(0)[:-2]
             magnitude = self.signalsTable.item(i,1).data(0)
             phase = self.signalsTable.item(i,2).data(0)[:-1]
             
-            y, _ = self.getContinuosSignal(frequency, magnitude, phase)
+            y, t = self.getContinuosSignal(frequency, magnitude, phase)
             i+=1
             
             self.signalSummition = np.add(self.signalSummition,y)
 
         self.summitionPlot.clearPlot()
-        self.summitionPlot.plotSignal(np.linspace(-2*np.pi, 2*np.pi, 1000), self.signalSummition)
+        self.summitionPlot.plotSignal(t, self.signalSummition)
 
     # Delete signal from the list
     def deleteSignal(self):
@@ -487,6 +487,23 @@ class Window(QMainWindow):
         
         self.signalSummitionPlot()
 
+    # Choose one signal from plot and plot it.
+    def plotSingleSignal(self):
+        if self.signalsList.currentText() != "Choose...":
+            currentIndex = int(self.signalsList.currentIndex()) - 1
+
+            frequency = self.signalsTable.item(currentIndex,0).data(0)[:-2]
+            magnitude = self.signalsTable.item(currentIndex,1).data(0)
+            phase = self.signalsTable.item(currentIndex,2).data(0)[:-1]
+
+            signal, t = self.getContinuosSignal(frequency, magnitude, phase)
+
+            self.summitionPlot.clearPlot()
+            self.summitionPlot.plotSignal(t, signal)
+
+        else:
+            self.signalSummitionPlot()
+    
     # Hide secondary Plot        
     def hideSecGraph(self):
         if self.hidden:
@@ -502,14 +519,12 @@ class Window(QMainWindow):
 
     # Return continuos signal given frequency, magnitude and phase: A cos(2*pi*freq*t + phase) 
     def getContinuosSignal(self, frequency, magnitude, phase):
-        tMin = -2*np.pi
-        tMax = 2*np.pi
-
-        t = np.linspace(tMin, tMax, 1000)
+        t = np.linspace(TMIN, TMAX, 1000)
         y = float(magnitude) * np.sin(2 * np.pi * float(frequency) * t + float(phase))
 
         return (y, t)
 
+    # Move signal in summer plot to the main plot.
     def moveToSamplePlot(self):
         freqList = list()
         i = 0
@@ -520,7 +535,7 @@ class Window(QMainWindow):
             i+=1
         self.maxFreq = max(freqList)
         self.mainPlot.clearSignal()
-        self.mainPlot.set_data(self.signalSummition, np.linspace(-2*np.pi, 2*np.pi, 1000))
+        self.mainPlot.set_data(self.signalSummition, np.linspace(TMIN, TMAX, 1000))
         self.mainPlot.plotSignal()
     
     def connect(self):
@@ -528,6 +543,7 @@ class Window(QMainWindow):
         self.hideButton.clicked.connect(self.hideSecGraph)
 
         self.deleteButton.clicked.connect(self.deleteSignal)
+        self.signalsList.currentTextChanged.connect(self.plotSingleSignal)
         self.saveExampleButton.clicked.connect(self.AddExample)
         self.moveSamplingButton.clicked.connect(self.moveToSamplePlot)
         
@@ -540,6 +556,7 @@ class Window(QMainWindow):
 
     ### Examples Functions
 
+    # Delete saved example
     def deleteExample(self):
         currentIndex = int(self.examplesList.currentIndex()) - 1
 
@@ -553,11 +570,12 @@ class Window(QMainWindow):
         df = pd.DataFrame(self.bigExamplesList)
         df.to_csv('ExamplesList.csv')
         
+    # Save As example
     def exportExample(self):
         exampleIndex = int(self.examplesList.currentText()[-1]) - 1 # compoBox Begin from 1
         exampleInfo = self.bigExamplesList[exampleIndex]
         
-        t = np.linspace(-2*np.pi, 2*np.pi, 1000)
+        t = np.linspace(TMIN, TMAX, 1000)
         signal = 0 * t
 
         for signalInfo in exampleInfo:
@@ -604,9 +622,7 @@ class Window(QMainWindow):
                 self.examplesList.addItem("Example " + str(self.examplesList.count()))
 
             return listExamples        
-        # except:
-        #     QMessageBox.warning(self, "Error", "Error in open file.")
-        #     return []
+
     
     # Preview loaded example 
     def loadExample(self):
