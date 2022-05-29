@@ -405,6 +405,14 @@ class Window(QMainWindow):
 
         self.composerTab.setLayout(composerLayout)
 
+        freq = float(self.freqBox.text())
+        magnitude = float(self.magnitudeBox.text())
+        phase = float(self.phaseBox.text())
+
+        signal, t = self.getContinuosSignal(freq, magnitude, phase)
+        self.sinusoidalPlot.plotSignal(t, signal)
+
+
     # Browse signal
     def browseSignal(self):
         path, fileExtension = QFileDialog.getOpenFileName(None, "Load Signal File", os.getenv('HOME') ,"csv(*.csv)")
@@ -414,6 +422,9 @@ class Window(QMainWindow):
         if fileExtension == "csv(*.csv)":
             self.mainDataPlot = pd.read_csv(path).iloc[:,1].values.tolist()
             self.timePlot = pd.read_csv(path).iloc[:,0].values.tolist()
+        else:
+            QMessageBox.critical(self,"Error", "You must open csv file.")
+            return
 
         self.maxFreq = self.getFmax() # Get Frequency Maximum
 
@@ -588,7 +599,7 @@ class Window(QMainWindow):
         
         dict = {'time': t, 'magnitude': signal}  
         df = pd.DataFrame(dict)
-        output_file, _ = QFileDialog.getSaveFileName(self, 'Save as File', None, 'CSV files (.csv);;All Files()')
+        output_file, _ = QFileDialog.getSaveFileName(self, 'Save as File', None, 'CSV files (.csv);')
         if output_file != '':
             if QFileInfo(output_file).suffix() == "" : output_file += '.csv'
 
