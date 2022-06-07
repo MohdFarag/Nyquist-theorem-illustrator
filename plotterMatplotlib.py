@@ -63,8 +63,15 @@ class MplCanvas(FigureCanvasQTAgg):
         self.draw()
 
     def sample(self, originalSignal, sampling_freq, analog_time):
-        time_interval = analog_time[-1] - analog_time[0]
+        if analog_time[0] != 0:
+            time_interval = analog_time[-1] - analog_time[0]
+        else :
+            time_interval = analog_time[-1]
         nsamples = int(np.ceil(sampling_freq * time_interval))
+
+        if analog_time[0] == 0:
+            time_interval *= 2
+
         if nsamples > 0:
             sampling_time = np.arange(min(analog_time), time_interval/2, 1/sampling_freq)
             sampling_values = [originalSignal[np.searchsorted(analog_time, t)] for t in sampling_time]
