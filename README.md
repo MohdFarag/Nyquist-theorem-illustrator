@@ -1,8 +1,8 @@
 <h1><img width="40px" height="40px" src="https://github.com/MohdFarag/Nyquist-theorem-illustrator/blob/main/images/icon.png"> Nyquist Theorem Illustrator</h1>
 
-### **DESCRIPTION:**
-<p>An illustrator for the signal recovery that shows the importance and validation of the <b>Nyquist Theorem</b>.</p>
+**An illustrator for the signal recovery that shows the importance and validation of the <b>Nyquist Theorem</b>.**
 
+### **Implementation:**
 <ul>
   <li>The user can sample the given/read signal and see the sampled points highlighted on top of the signal.</li>
   <li>The user can reconstruct/recover the signal from the sampled points.</li>
