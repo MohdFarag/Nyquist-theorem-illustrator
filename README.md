@@ -1,5 +1,9 @@
 <h1><img width="40px" height="40px" src="https://github.com/MohdFarag/Nyquist-theorem-illustrator/blob/main/images/icon.png"> Nyquist Theorem Illustrator</h1>
 
+<center>
+<img width="1000px" height="300px" src="https://upload.wikimedia.org/wikipedia/commons/4/43/Nyquist_sampling.gif">
+</center>
+
 **An illustrator for the signal recovery that shows the importance and validation of the <b>Nyquist Theorem</b>.**
 
 ### **Implementation:**
